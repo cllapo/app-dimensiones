@@ -79,7 +79,7 @@ function Camera({ onCapture }) {
             <button onClick={() => capturePhoto(2)}>Capturar Foto 2</button>
         </div>
     );
-}
+
 
 function ImageDisplay({ photo1, photo2 }) {
     return (
