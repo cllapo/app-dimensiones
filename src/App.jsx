@@ -3,15 +3,35 @@ import cv from "@techstark/opencv-js";
 import './styles.css';
 
 
+import { useState, useEffect, useRef } from "react";
+
 function Camera({ onCapture }) {
     const videoRef = useRef(null);
 
     useEffect(() => {
         const startCamera = async () => {
             try {
-                const userMedia = await navigator.mediaDevices.getUserMedia({ video: true });
-                if (videoRef.current) {
-                    videoRef.current.srcObject = userMedia;
+                // Obtener todos los dispositivos de medios disponibles
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === "videoinput");
+
+                // Buscar la cámara trasera (generalmente la primera cámara es la frontal, la segunda es la trasera)
+                const backCamera = videoDevices.find(device => device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('rear'));
+
+                if (backCamera) {
+                    // Si encontramos la cámara trasera, la usamos
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { deviceId: backCamera.deviceId }
+                    });
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                    }
+                } else {
+                    // Si no encontramos una cámara trasera, podemos acceder a la cámara por defecto
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                    }
                 }
             } catch (error) {
                 console.error("Error accediendo a la cámara:", error);
@@ -22,7 +42,7 @@ function Camera({ onCapture }) {
 
         return () => {
             if (videoRef.current && videoRef.current.srcObject) {
-                videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+                videoRef.current.srcObject.getTracks().forEach(track => track.stop());
             }
         };
     }, []);
@@ -46,6 +66,9 @@ function Camera({ onCapture }) {
         </div>
     );
 }
+
+export default Camera;
+
 
 function ImageDisplay({ photo1, photo2 }) {
     return (
