@@ -75,120 +75,73 @@ function App() {
             alert("Por favor, capture ambas fotos antes de calcular.");
             return;
         }
-    
+
         const imgElement1 = new Image();
         const imgElement2 = new Image();
-    
+
         imgElement1.src = photo1;
         imgElement2.src = photo2;
-    
+
         imgElement2.onload = () => {
             const img1 = cv.imread(imgElement1);
             const img2 = cv.imread(imgElement2);
-    
-            // Convertir imágenes a escala de grises
+
             const gray1 = new cv.Mat();
             const gray2 = new cv.Mat();
             cv.cvtColor(img1, gray1, cv.COLOR_RGBA2GRAY);
             cv.cvtColor(img2, gray2, cv.COLOR_RGBA2GRAY);
-    
-            // Detectores de características y descriptores
+
             const orb = new cv.ORB();
             const keypoints1 = new cv.KeyPointVector();
             const keypoints2 = new cv.KeyPointVector();
             const descriptors1 = new cv.Mat();
             const descriptors2 = new cv.Mat();
-    
+
             orb.detectAndCompute(gray1, new cv.Mat(), keypoints1, descriptors1);
             orb.detectAndCompute(gray2, new cv.Mat(), keypoints2, descriptors2);
-    
-            // Coincidencias de puntos entre las imágenes
+
             const matcher = new cv.BFMatcher(cv.NORM_HAMMING, true);
             const matches = new cv.DMatchVector();
             matcher.match(descriptors1, descriptors2, matches);
-    
-            console.log("Coincidencias encontradas:", matches.size());
-    
+
+            console.log("Coincidencias:", matches.size());
+
             if (matches.size() < 4) {
-                alert("No se encontraron suficientes coincidencias para calcular las dimensiones.");
+                alert("No hay suficientes coincidencias para calcular dimensiones.");
                 return;
             }
-    
-            // Extraer puntos de coincidencia
+
             const points1 = [];
             const points2 = [];
+
             for (let i = 0; i < matches.size(); i++) {
                 const match = matches.get(i);
                 const kp1 = keypoints1.get(match.queryIdx);
                 const kp2 = keypoints2.get(match.trainIdx);
-    
+
                 points1.push(kp1.pt.x, kp1.pt.y);
                 points2.push(kp2.pt.x, kp2.pt.y);
             }
-    
+
             const matPoints1 = cv.matFromArray(points1.length / 2, 1, cv.CV_32FC2, points1);
             const matPoints2 = cv.matFromArray(points2.length / 2, 1, cv.CV_32FC2, points2);
-    
-            // Calcular la homografía
+
             const homography = cv.findHomography(matPoints1, matPoints2, cv.RANSAC);
-    
+
             if (!homography || homography.data64F.length !== 9) {
                 alert("No se pudo calcular la matriz de homografía.");
                 return;
             }
-    
+
             console.log("Matriz de homografía:", homography.data64F);
-    
-            // Detectar códigos QR en ambas imágenes
-            const qrDetector = new cv.QRCodeDetector();
-            const qr1 = new cv.Mat();
-            const qr2 = new cv.Mat();
-    
-            const qrFound1 = qrDetector.detect(gray1, qr1);
-            const qrFound2 = qrDetector.detect(gray2, qr2);
-    
-            if (!qrFound1 || !qrFound2) {
-                alert("No se detectaron códigos QR en ambas imágenes.");
-                return;
-            }
-    
-            // Obtener los puntos de los códigos QR
-            const qrPoints1 = qr1.data32F;
-            const qrPoints2 = qr2.data32F;
-    
-            // Definir el tamaño real del QR (en metros)
-            const qrSizeReal = 0.05; // 15 cm en metros
-    
-            // Calcular la distancia entre los puntos del QR
-            const dist1 = Math.sqrt(
-                Math.pow(qrPoints1[2] - qrPoints1[0], 2) + Math.pow(qrPoints1[3] - qrPoints1[1], 2)
-            );
-            const dist2 = Math.sqrt(
-                Math.pow(qrPoints2[2] - qrPoints2[0], 2) + Math.pow(qrPoints2[3] - qrPoints2[1], 2)
-            );
-    
-            // Calcular las escalas basadas en los QR
-            const scale1 = qrSizeReal / dist1;
-            const scale2 = qrSizeReal / dist2;
-    
-            // Promediar las escalas
-            const scale = (scale1 + scale2) / 2;
-    
-            // Calcular la distancia entre los QR en píxeles
-            const qrCenter1 = [(qrPoints1[0] + qrPoints1[4]) / 2, (qrPoints1[1] + qrPoints1[5]) / 2];
-            const qrCenter2 = [(qrPoints2[0] + qrPoints2[4]) / 2, (qrPoints2[1] + qrPoints2[5]) / 2];
-            const pixelDistance = Math.sqrt(
-                Math.pow(qrCenter2[0] - qrCenter1[0], 2) + Math.pow(qrCenter2[1] - qrCenter1[1], 2)
-            );
-    
-            // Estimar las dimensiones de la habitación
-            const roomWidth = pixelDistance * scale;
-            const roomHeight = Math.max(qrSizeReal * (gray1.rows / dist1), qrSizeReal * (gray2.rows / dist2));
-            const roomDepth = Math.abs(scale1 - scale2) * gray1.cols;
-    
-            setDimensions({ width: roomWidth, height: roomHeight, depth: roomDepth });
-    
-            // Liberar memoria
+
+            const scale = 3.0;
+            const width = Math.abs(homography.data64F[0]) * scale;
+            const height = Math.abs(homography.data64F[4]) * scale;
+            const depth = Math.abs(homography.data64F[8]) * scale;
+
+            setDimensions({ width, height, depth });
+
             img1.delete();
             img2.delete();
             gray1.delete();
@@ -203,7 +156,6 @@ function App() {
             homography.delete();
         };
     };
-    
 
     const calculateLuminaires = () => {
         if (!dimensions || !roomType || !luminaireType) {
