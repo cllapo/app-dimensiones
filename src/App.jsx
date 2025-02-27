@@ -135,7 +135,7 @@ function App() {
 
             console.log("Matriz de homografía:", homography.data64F);
 
-            const scale = 1.0;
+            const scale = 2.0;
             const width = Math.abs(homography.data64F[0]) * scale;
             const height = Math.abs(homography.data64F[4]) * scale;
             const depth = Math.abs(homography.data64F[8]) * scale;
