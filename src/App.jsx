@@ -176,7 +176,7 @@ function App() {
             const qrPoints2 = qr2.data32F;
     
             // Definir el tamaño real del QR (en metros)
-            const qrSizeReal = 0.15; // 15 cm en metros
+            const qrSizeReal = 0.28; // 15 cm en metros
     
             // Calcular la distancia entre los puntos del QR
             const dist1 = Math.sqrt(
