@@ -3,8 +3,6 @@ import cv from "@techstark/opencv-js";
 import './styles.css';
 
 
-import { useState, useEffect, useRef } from "react";
-
 function Camera({ onCapture }) {
     const videoRef = useRef(null);
 
@@ -66,8 +64,6 @@ function Camera({ onCapture }) {
         </div>
     );
 }
-
-export default Camera;
 
 
 function ImageDisplay({ photo1, photo2 }) {
