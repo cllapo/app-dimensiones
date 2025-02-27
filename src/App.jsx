@@ -3,7 +3,6 @@ import cv from "@techstark/opencv-js";
 import './styles.css';
 
 
-import { useState, useEffect, useRef } from "react";
 
 function Camera({ onCapture }) {
     const videoRef = useRef(null);
